@@ -1,0 +1,106 @@
+# ─── AI Narrative Director — editorial_rules.yaml ────────────────────────────
+# ALL editorial thresholds live here. Never hardcoded in pipeline logic.
+# Change a value → re-run director + xml stages only (no AI calls needed).
+
+# ─── Groq API Settings ────────────────────────────────────────────────────────
+groq:
+  budget_per_run: 50          # max Groq calls per pipeline run (free-tier guard)
+  max_retries: 3              # per-call retries on rate-limit or bad JSON
+  base_delay_seconds: 2.0     # exponential backoff base
+  max_delay_seconds: 30.0     # cap on backoff
+  model: "llama-3.3-70b-versatile"      # Groq-hosted model (free tier)
+  vision_model: "meta-llama/llama-4-scout-17b-16e-instruct"  # Groq vision model (free tier)
+  vision_fallback: true       # if vision model unavailable, use OpenCV heuristics
+
+# ─── Camera Discovery ─────────────────────────────────────────────────────────
+camera_discovery:
+  frames_to_sample: 20          # N frames sampled per camera for analysis
+  face_min_area_ratio: 0.005    # min face_bbox_area / frame_area to count as "face detected"
+  wide_shot_face_area_ratio_max: 0.05   # face area ratio ≤ this → classified as wide shot
+  frozen_frame_hash_distance: 5 # phash distance ≤ this → frames considered frozen
+  frozen_frame_consecutive_min: 3       # min consecutive frozen frames to flag failure
+  activity_diff_threshold: 10.0         # mean abs pixel diff < this → low-activity frame
+  face_confidence_threshold: 0.5        # DNN face detector min confidence
+  ocr_tablet_min_text_area_ratio: 0.03  # min OCR text area ratio → possible on-screen display
+  ocr_confidence_threshold: 60          # pytesseract min word confidence to count
+
+# ─── Speaker Mapping ──────────────────────────────────────────────────────────
+speaker_mapping:
+  context_window_seconds: 300   # first N seconds of transcript sent to Groq for role mapping
+  min_segment_seconds: 0.5      # ignore diarization segments shorter than this
+  identity_persistence: true    # never re-derive speaker per segment — persist episode-wide
+
+# ─── Narrative Understanding ──────────────────────────────────────────────────
+narrative:
+  max_retries_on_bad_json: 3    # per Groq call; on exhaustion → safe default label "unknown"
+  batch_size_segments: 20       # how many diarization segments per Groq call
+  safe_default_label: "unknown"
+
+# ─── Director (Editorial Decision Engine) ────────────────────────────────────
+director:
+  # Listener Reaction Rule
+  listener_reaction_min_s: 3.0
+  listener_reaction_max_s: 5.0
+
+  # Refresh Rule
+  refresh_interval_s: 45.0
+  refresh_wide_duration_s: 3.0
+
+  # Long Monologue Rule
+  monologue_threshold_s: 30.0          # segment > this → treated as monologue
+  monologue_alternate_interval_s: 90.0 # inject alternate angle every N seconds of monologue
+
+  # Physical Adjustment Rule
+  physical_adjustment_gaze_threshold_s: 3.0  # off-screen gaze > this → mandatory cutaway
+
+  # Safety Rule
+  safety_min_hold_s: 1.0     # never cut sooner than this after last cut
+  blink_buffer_frames: 3     # skip cut if within N frames of detected blink
+
+  # Dialogue Rule
+  rapid_exchange_max_turn_s: 8.0       # turns < this → "rapid exchange"
+  rapid_exchange_min_turns: 3          # need this many consecutive rapid turns
+
+  # Self-correction (Critic → Director retry loop)
+  max_self_correction_iterations: 3
+
+# ─── Show-Specific Overrides ─────────────────────────────────────────────────
+show_types:
+  "The Nav Thethi Show":
+    wide_shot_max_pct: 20.0           # wide usage must stay below this % of runtime
+    hero_first: true                   # always default to speaker HERO first
+    pacing: "cinematic"               # cinematic (slower cuts) vs dynamic
+    wide_reset_on_topic_change: true  # inject wide on topic_change label
+    emotional_close_up_priority: true # emotional_moment → HERO close-up preferred
+
+  "Cracking the Maturity Code":
+    wide_shot_max_pct: 40.0
+    opening_in_sbs: true              # opening question must remain in SBS
+    sbs_on_shared_laughter: true      # shared laughter → SBS
+    sbs_on_framework: true            # framework_discussion → SBS
+    intro_handling: true              # detect and handle intro segment
+    outro_handling: true              # detect and handle outro segment
+    pacing: "dynamic"
+
+# ─── XML Generator ────────────────────────────────────────────────────────────
+xml:
+  fcpxml_version: "1.10"
+  frame_rate_numerator: 30000
+  frame_rate_denominator: 1001        # ~29.97 fps (standard NTSC)
+  ticks_per_second: 254016000000      # FCP internal tick rate
+  add_cut_comments: true              # inline XML comments per cut (editor guidance)
+  gap_fill_camera: "CAM_WIDE"         # camera to use for gap fills (fallback)
+
+# ─── Validation ────────────────────────────────────────────────────────────────
+validation:
+  allow_zero_duration_gap: false
+  max_overlap_frames: 0              # 0 = no overlap allowed at all
+  min_clip_duration_frames: 1
+  check_asset_refs: true
+  check_timecode_bounds: true
+  check_no_negative_duration: true
+
+# ─── Human-in-the-Loop ────────────────────────────────────────────────────────
+hitl:
+  confidence_threshold: 0.6          # cuts below this confidence → needs_review.json
+  enabled: true

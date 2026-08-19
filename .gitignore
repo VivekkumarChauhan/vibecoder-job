@@ -1,0 +1,90 @@
+# ==============================================================================
+# AI Narrative Video Director — .gitignore
+# ==============================================================================
+
+# Environment variables & secrets (CRITICAL: Protect Groq API keys)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Python artifacts & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Project cache & pipeline scratch
+cache/
+.cache/
+scratch/
+temp/
+tmp/
+
+# Large media files (videos, audio stems)
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wmv
+*.m4v
+*.wav
+*.mp3
+*.aac
+*.flac
+*.m4a
+
+# Pipeline output files & artifacts
+output/
+output.fcpxml
+editing_report.json
+timeline.html
+test_output.fcpxml
+
+# Operating system & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
